@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "ChallengeSession": {
+      "title": "ChallengeSession",
+      "description": "Sessiya ma'lumotlari va yakuniy natijalar",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "startedAt": { "type": "string" },
+        "endedAt": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "fullName": { "type": "string" },
+        "anonymousUid": { "type": "string" },
+        "status": { "type": "string" },
+        "totalScore": { "type": "integer" },
+        "maxScore": { "type": "integer" },
+        "elapsedSeconds": { "type": "integer" },
+        "remainingSeconds": { "type": "integer" },
+        "completedTasksCount": { "type": "integer" },
+        "taskResults": { "type": "object" },
+        "userAgent": { "type": "string" }
+      },
+      "required": ["id", "firstName", "lastName", "fullName", "status"]
+    },
+    "TaskAttempt": {
+      "title": "TaskAttempt",
+      "description": "Har bir masala uchun qilingan urinish",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "taskId": { "type": "string" },
+        "taskName": { "type": "string" },
+        "status": { "type": "string" },
+        "score": { "type": "integer" },
+        "maxScore": { "type": "integer" },
+        "attemptsCount": { "type": "integer" },
+        "hintsUsed": { "type": "integer" },
+        "timeSpentSeconds": { "type": "integer" }
+      }
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Reyting jadvali",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "totalScore": { "type": "integer" },
+        "completedTasksCount": { "type": "integer" },
+        "elapsedSeconds": { "type": "integer" }
+      }
+    }
+  },
+  "firestore": {
+    "/challengeSessions/{sessionId}": {
+      "schema": "ChallengeSession",
+      "description": "Ishtirokchilarning challenge sessiyalari"
+    },
+    "/taskAttempts/{attemptId}": {
+      "schema": "TaskAttempt",
+      "description": "Foydalanuvchilarning masala bo'yicha urinishlari logi"
+    },
+    "/leaderboard/{sessionId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Sessiya tugaganidan so'ng reytingga tushadigan yozuv"
+    }
+  }
+}

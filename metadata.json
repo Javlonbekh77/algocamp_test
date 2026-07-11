@@ -1,0 +1,6 @@
+{
+  "name": "STC Algo Challenge",
+  "description": "STC-2026 / AlgoCamp talabalari uchun 30 daqiqalik qiziqarli o'yinli algoritmik challenge platformasi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Challenge sessions collection
+    match /challengeSessions/{sessionId} {
+      allow read, write: if true;
+    }
+
+    // Task attempts collection
+    match /taskAttempts/{attemptId} {
+      allow read, write: if true;
+    }
+
+    // Leaderboard collection
+    match /leaderboard/{sessionId} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -10,23 +10,23 @@ interface BinaryTreasureTaskProps {
 }
 
 export default function BinaryTreasureTask({ onComplete, savedState, onStateChange }: BinaryTreasureTaskProps) {
-  const [currentRoundIndex, setCurrentRoundIndex] = useState<number>(0); // 0 = Round 1 (1-100, max 7), 1 = Round 2 (1-1000, max 10)
-  const [targetNumber, setTargetNumber] = useState<number>(0);
-  const [guesses, setGuesses] = useState<number[]>([]);
-  const [minRange, setMinRange] = useState<number>(1);
-  const [maxRange, setMaxRange] = useState<number>(100);
-  const [found, setFound] = useState<boolean>(false);
-  const [gameOver, setGameOver] = useState<boolean>(false);
-  const [feedback, setFeedback] = useState<string>("");
+  const [currentRoundIndex, setCurrentRoundIndex] = useState<number>(() => savedState?.currentRoundIndex ?? 0); // 0 = Round 1 (1-100, max 7), 1 = Round 2 (1-1000, max 10)
+  const [targetNumber, setTargetNumber] = useState<number>(() => savedState?.targetNumber ?? 0);
+  const [guesses, setGuesses] = useState<number[]>(() => savedState?.guesses ?? []);
+  const [minRange, setMinRange] = useState<number>(() => savedState?.minRange ?? 1);
+  const [maxRange, setMaxRange] = useState<number>(() => savedState?.maxRange ?? (savedState?.currentRoundIndex === 1 ? 1000 : 100));
+  const [found, setFound] = useState<boolean>(() => savedState?.found ?? false);
+  const [gameOver, setGameOver] = useState<boolean>(() => savedState?.gameOver ?? false);
+  const [feedback, setFeedback] = useState<string>(() => savedState?.feedback ?? "");
   const [startTime] = useState<number>(Date.now());
-  const [roundScores, setRoundScores] = useState<number[]>([0, 0]);
-  const [roundChecked, setRoundChecked] = useState<boolean[]>([false, false]);
+  const [roundScores, setRoundScores] = useState<number[]>(() => savedState?.roundScores ?? [0, 0]);
+  const [roundChecked, setRoundChecked] = useState<boolean[]>(() => savedState?.roundChecked ?? [false, false]);
   const [manualInputVal, setManualInputVal] = useState<string>("");
   
   // Historical round trackers for final report
-  const [roundGuesses, setRoundGuesses] = useState<number[][]>([[], []]);
-  const [roundTargets, setRoundTargets] = useState<number[]>([0, 0]);
-  const [roundFounds, setRoundFounds] = useState<boolean[]>([false, false]);
+  const [roundGuesses, setRoundGuesses] = useState<number[][]>(() => savedState?.roundGuesses ?? [[], []]);
+  const [roundTargets, setRoundTargets] = useState<number[]>(() => savedState?.roundTargets ?? [0, 0]);
+  const [roundFounds, setRoundFounds] = useState<boolean[]>(() => savedState?.roundFounds ?? [false, false]);
 
   // Helper to count optimal binary search steps
   const countBinarySearchSteps = (target: number, minVal: number, maxVal: number): number => {
@@ -47,31 +47,12 @@ export default function BinaryTreasureTask({ onComplete, savedState, onStateChan
     return steps;
   };
 
-  // Initialize target number
+  // Initialize target number only if not restored
   useEffect(() => {
-    resetRound(0);
-  }, []);
-
-  // Restore state if provided
-  const hasLoadedRef = React.useRef(false);
-  useEffect(() => {
-    if (savedState && !hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-      if (savedState.currentRoundIndex !== undefined) setCurrentRoundIndex(savedState.currentRoundIndex);
-      if (savedState.targetNumber !== undefined) setTargetNumber(savedState.targetNumber);
-      if (savedState.guesses) setGuesses(savedState.guesses);
-      if (savedState.minRange !== undefined) setMinRange(savedState.minRange);
-      if (savedState.maxRange !== undefined) setMaxRange(savedState.maxRange);
-      if (savedState.found !== undefined) setFound(savedState.found);
-      if (savedState.gameOver !== undefined) setGameOver(savedState.gameOver);
-      if (savedState.feedback) setFeedback(savedState.feedback);
-      if (savedState.roundScores) setRoundScores(savedState.roundScores);
-      if (savedState.roundChecked) setRoundChecked(savedState.roundChecked);
-      if (savedState.roundGuesses) setRoundGuesses(savedState.roundGuesses);
-      if (savedState.roundTargets) setRoundTargets(savedState.roundTargets);
-      if (savedState.roundFounds) setRoundFounds(savedState.roundFounds);
+    if (targetNumber === 0) {
+      resetRound(currentRoundIndex);
     }
-  }, [savedState]);
+  }, []);
 
   // Synchronize state changes back to parent
   useEffect(() => {

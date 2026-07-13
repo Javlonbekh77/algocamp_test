@@ -12,35 +12,22 @@ interface SlidingPuzzleTaskProps {
 export default function SlidingPuzzleTask({ onComplete, savedState, onStateChange }: SlidingPuzzleTaskProps) {
   const solvedBoard = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0];
 
-  const [board, setBoard] = useState<number[]>([]);
-  const [initialScrambledBoard, setInitialScrambledBoard] = useState<number[]>([]);
-  const [scrambleMovesCount, setScrambleMovesCount] = useState<number>(15);
-  const [movesCount, setMovesCount] = useState<number>(0);
-  const [solved, setSolved] = useState<boolean>(false);
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
-  const [feedback, setFeedback] = useState<string>("Bloklarni surib, tartibga keltiring (1-15). 0 bo'sh katakdir.");
+  const [board, setBoard] = useState<number[]>(() => savedState?.board ?? []);
+  const [initialScrambledBoard, setInitialScrambledBoard] = useState<number[]>(() => savedState?.initialScrambledBoard ?? []);
+  const [scrambleMovesCount, setScrambleMovesCount] = useState<number>(() => savedState?.scrambleMovesCount ?? 15);
+  const [movesCount, setMovesCount] = useState<number>(() => savedState?.movesCount ?? 0);
+  const [solved, setSolved] = useState<boolean>(() => savedState?.solved ?? false);
+  const [isCompleted, setIsCompleted] = useState<boolean>(() => savedState?.isCompleted ?? false);
+  const [feedback, setFeedback] = useState<string>(() => savedState?.feedback ?? "Bloklarni surib, tartibga keltiring (1-15). 0 bo'sh katakdir.");
   const [shakeTileIdx, setShakeTileIdx] = useState<number | null>(null);
   const [startTime] = useState<number>(Date.now());
 
-  // Generate scrambled board on load
+  // Generate scrambled board on load only if not restored
   useEffect(() => {
-    generateScramble();
-  }, []);
-
-  // Restore state
-  const hasLoadedRef = React.useRef(false);
-  useEffect(() => {
-    if (savedState && !hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-      if (savedState.board) setBoard(savedState.board);
-      if (savedState.initialScrambledBoard) setInitialScrambledBoard(savedState.initialScrambledBoard);
-      if (savedState.scrambleMovesCount !== undefined) setScrambleMovesCount(savedState.scrambleMovesCount);
-      if (savedState.movesCount !== undefined) setMovesCount(savedState.movesCount);
-      if (savedState.solved !== undefined) setSolved(savedState.solved);
-      if (savedState.isCompleted !== undefined) setIsCompleted(savedState.isCompleted);
-      if (savedState.feedback) setFeedback(savedState.feedback);
+    if (board.length === 0) {
+      generateScramble();
     }
-  }, [savedState]);
+  }, []);
 
   // Synchronize state changes back to parent
   useEffect(() => {

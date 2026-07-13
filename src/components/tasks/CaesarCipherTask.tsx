@@ -57,12 +57,11 @@ export default function CaesarCipherTask({
   fullName = "ALGORITM DASTURCHI",
 }: CaesarCipherTaskProps) {
   
-  // 1. Sanitize the target name
-  const targetName = sanitizeName(fullName);
+  // 1. Set static target message to decrypt
+  const targetName = "ALGORITM BILIMLARI";
 
-  // 2. Setup randomized but stable shift and hint word
-  // We want to ensure shift is not 0
-  const [shiftKey, setShiftKey] = useState<number>(5);
+  // 2. Setup stable shift and hint word matching the prompt's clue: ALGORITM -> MXSADUFY (shift 12)
+  const shiftKey = 12;
   const [hintWordDecrypted] = useState<string>("ALGORITM");
   const [hintWordEncrypted, setHintWordEncrypted] = useState<string>("");
   const [encryptedName, setEncryptedName] = useState<string>("");
@@ -74,23 +73,14 @@ export default function CaesarCipherTask({
   const [feedback, setFeedback] = useState<string>("");
   const [startTime] = useState<number>(Date.now());
 
-  // Generate encryption once we have shiftKey and targetName
+  // Generate encryption once
   useEffect(() => {
-    // Generate a random shift key on initial load (stable for the session)
-    // We use a pseudo-random hash of the sessionId to keep it stable but different for users
-    let hash = 0;
-    for (let i = 0; i < sessionId.length; i++) {
-      hash = sessionId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const finalShift = Math.abs(hash % 23) + 2; // Shift between 2 and 24
-    setShiftKey(finalShift);
-    
-    const encName = caesarShift(targetName, finalShift);
+    const encName = caesarShift(targetName, shiftKey);
     setEncryptedName(encName);
 
-    const encHint = caesarShift(hintWordDecrypted, finalShift);
+    const encHint = caesarShift(hintWordDecrypted, shiftKey);
     setHintWordEncrypted(encHint);
-  }, [sessionId, targetName, hintWordDecrypted]);
+  }, [targetName, shiftKey, hintWordDecrypted]);
 
   // Restore saved state if available
   const hasLoadedRef = React.useRef(false);

@@ -142,32 +142,32 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
         totalScore,
         completedTasksCount: completedCount,
       });
-
-      // 4. Auto progression to the next task after 3 seconds
-      setTimeout(() => {
-        const currentIndex = TASK_LIST.findIndex(t => t.id === taskResult.taskId);
-        let nextTaskId = "";
-        
-        // Attempt to find the next incomplete task
-        for (let i = 1; i <= TASK_LIST.length; i++) {
-          const nextIndex = (currentIndex + i) % TASK_LIST.length;
-          const t = TASK_LIST[nextIndex];
-          if (!updatedResults[t.id]?.completed) {
-            nextTaskId = t.id;
-            break;
-          }
-        }
-
-        // Fallback if all tasks are completed
-        if (!nextTaskId) {
-          nextTaskId = TASK_LIST[(currentIndex + 1) % TASK_LIST.length].id;
-        }
-
-        setActiveTaskId(nextTaskId);
-      }, 3000);
     } catch (err) {
       console.error("Failed to save progress to Firestore:", err);
     }
+
+    // 4. Auto progression to the next task after 3 seconds
+    setTimeout(() => {
+      const currentIndex = TASK_LIST.findIndex(t => t.id === taskResult.taskId);
+      let nextTaskId = "";
+      
+      // Attempt to find the next incomplete task
+      for (let i = 1; i <= TASK_LIST.length; i++) {
+        const nextIndex = (currentIndex + i) % TASK_LIST.length;
+        const t = TASK_LIST[nextIndex];
+        if (!updatedResults[t.id]?.completed) {
+          nextTaskId = t.id;
+          break;
+        }
+      }
+
+      // Fallback if all tasks are completed
+      if (!nextTaskId) {
+        nextTaskId = TASK_LIST[(currentIndex + 1) % TASK_LIST.length].id;
+      }
+
+      setActiveTaskId(nextTaskId);
+    }, 3000);
   };
 
   const handleGoToNextTask = () => {
@@ -199,7 +199,20 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
       const finishedSession = await submitChallengeSession(currentSession.id, currentSession);
       onFinish(finishedSession);
     } catch (err) {
-      console.error("Auto submit failed:", err);
+      console.error("Auto submit failed, using offline fallback:", err);
+      const now = new Date();
+      const startedTime = new Date(currentSession.startedAt).getTime();
+      const elapsedSeconds = Math.min(1800, Math.floor((now.getTime() - startedTime) / 1000));
+      const remainingSeconds = Math.max(0, 1800 - elapsedSeconds);
+      
+      const finishedSession = {
+        ...currentSession,
+        status: "finished" as const,
+        endedAt: now.toISOString(),
+        elapsedSeconds,
+        remainingSeconds,
+      };
+      onFinish(finishedSession);
     } finally {
       setSubmitting(false);
     }
@@ -212,7 +225,20 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
       const finishedSession = await submitChallengeSession(currentSession.id, currentSession);
       onFinish(finishedSession);
     } catch (err) {
-      console.error("Manual submit failed:", err);
+      console.error("Manual submit failed, using offline fallback:", err);
+      const now = new Date();
+      const startedTime = new Date(currentSession.startedAt).getTime();
+      const elapsedSeconds = Math.min(1800, Math.floor((now.getTime() - startedTime) / 1000));
+      const remainingSeconds = Math.max(0, 1800 - elapsedSeconds);
+      
+      const finishedSession = {
+        ...currentSession,
+        status: "finished" as const,
+        endedAt: now.toISOString(),
+        elapsedSeconds,
+        remainingSeconds,
+      };
+      onFinish(finishedSession);
     } finally {
       setSubmitting(false);
       setShowConfirmFinish(false);

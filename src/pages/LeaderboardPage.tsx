@@ -9,6 +9,55 @@ interface LeaderboardPageProps {
   onNavigate: (route: string) => void;
 }
 
+const getTaskDetailsTooltip = (taskId: string, result: any, taskName: string) => {
+  if (!result) return `${taskName}: Urinilmagan (0 ball)`;
+  
+  const score = result.score ?? 0;
+  const isCompleted = result.completed;
+  
+  if (isCompleted) {
+    return `${taskName}: 100% yechilgan! (${score} ball)`;
+  }
+  
+  if (score > 0) {
+    let totalRounds = 3;
+    let passedRounds = 0;
+    let currentRound = 1;
+    
+    if (taskId === "coin_change") {
+      passedRounds = result.details?.rounds?.filter((r: any) => r.correct).length || 0;
+      currentRound = Math.min(3, (result.details?.currentRoundIndex || 0) + 1);
+    } else if (taskId === "greedy_backpack") {
+      passedRounds = result.details?.roundScores?.filter((s: number) => s > 0).length || 0;
+      currentRound = Math.min(3, (result.details?.currentRoundIndex || 0) + 1);
+    } else if (taskId === "binary_treasure") {
+      totalRounds = 2;
+      passedRounds = result.details?.roundFounds?.filter((f: any) => f).length || 0;
+      currentRound = Math.min(2, (result.details?.currentRoundIndex || 0) + 1);
+    } else if (taskId === "prime_detective") {
+      totalRounds = 2;
+      passedRounds = result.details?.roundCorrect?.filter((c: any) => c).length || 0;
+      currentRound = Math.min(2, (result.details?.currentRoundIndex || 0) + 1);
+    } else if (taskId === "shortest_path") {
+      totalRounds = 1;
+      passedRounds = 0;
+      currentRound = 1;
+    } else if (taskId === "sliding_puzzle") {
+      totalRounds = 1;
+      passedRounds = 0;
+      currentRound = 1;
+    }
+    
+    if (totalRounds > 1) {
+      return `${taskName}: ${currentRound}-raund ustida ishlamoqda, ${passedRounds}/${totalRounds} raund o'tilgan (${score} ball)`;
+    } else {
+      return `${taskName}: qisman yechilgan (${score} ball)`;
+    }
+  }
+  
+  return `${taskName}: urinilgan lekin hali ball yig'ilmagan (0 ball)`;
+};
+
 export default function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [filter, setFilter] = useState<"all" | "today">("all");
@@ -86,6 +135,7 @@ export default function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
     { id: "shortest_path", short: "SP", name: "Eng Arzon Yo'l" },
     { id: "sliding_puzzle", short: "PZ", name: "15 Box" },
     { id: "prime_detective", short: "PD", name: "Tub Son" },
+    { id: "caesar_cipher", short: "SM", name: "Sirli Maktub" },
   ];
 
   return (
@@ -155,7 +205,7 @@ export default function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
             </div>
             <div className="pl-4">
               <div className="text-[9px] text-slate-500 uppercase font-black">Jami Ball</div>
-              <div className="text-lg font-black text-amber-400">{currentUserEntry.totalScore} <span className="text-xs text-slate-500 font-normal">/ 600</span></div>
+              <div className="text-lg font-black text-amber-400">{currentUserEntry.totalScore} <span className="text-xs text-slate-500 font-normal">/ {tasks.length * 100}</span></div>
             </div>
             <div className="pl-4">
               <div className="text-[9px] text-slate-500 uppercase font-black">Muvaffaqiyat</div>
@@ -385,6 +435,7 @@ export default function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
                         {tasks.map((t) => {
                           const score = entry.taskBreakdown?.[t.id] ?? 0;
                           const attempted = entry.taskBreakdown?.[t.id] !== undefined;
+                          const taskResult = (entry as any).taskResults?.[t.id];
 
                           let bgBadge = "bg-slate-900/20 text-slate-700 border-slate-900";
                           let scoreText = "-";
@@ -394,7 +445,7 @@ export default function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
                               bgBadge = "bg-emerald-950/40 border-emerald-500/30 text-emerald-400 font-black shadow-[0_0_8px_rgba(16,185,129,0.05)]";
                               scoreText = "+100";
                             } else if (score > 0) {
-                              bgBadge = "bg-yellow-950/30 border-yellow-500/25 text-yellow-500 font-bold";
+                              bgBadge = "bg-yellow-950/30 border-yellow-500/25 text-yellow-500 font-bold animate-pulse";
                               scoreText = `+${score}`;
                             } else {
                               bgBadge = "bg-red-950/20 border-red-500/25 text-red-400 font-semibold";
@@ -402,11 +453,13 @@ export default function LeaderboardPage({ onNavigate }: LeaderboardPageProps) {
                             }
                           }
 
+                          const tooltip = getTaskDetailsTooltip(t.id, taskResult || (score > 0 ? { score } : null), t.name);
+
                           return (
                             <td key={t.id} className="px-1 py-3 text-center">
                               <div
-                                className={`inline-flex items-center justify-center w-12 py-1 text-[10px] rounded border ${bgBadge}`}
-                                title={`${t.name}: ${score} ball`}
+                                className={`inline-flex items-center justify-center w-12 py-1 text-[10px] rounded border cursor-help ${bgBadge}`}
+                                title={tooltip}
                               >
                                 {scoreText}
                               </div>

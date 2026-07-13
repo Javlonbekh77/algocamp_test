@@ -27,29 +27,29 @@ export const GRAPH_NODES: GraphNode[] = [
 ];
 
 export const GRAPH_EDGES: GraphEdge[] = [
-  { from: "Toshkent", to: "Guliston", cost: 4 },
-  { from: "Toshkent", to: "Jizzax", cost: 7 },
-  { from: "Guliston", to: "Jizzax", cost: 2 },
-  { from: "Guliston", to: "Samarqand", cost: 8 },
+  { from: "Toshkent", to: "Guliston", cost: 5 },
+  { from: "Toshkent", to: "Jizzax", cost: 9 },
+  { from: "Guliston", to: "Jizzax", cost: 6 },
+  { from: "Guliston", to: "Samarqand", cost: 12 },
   { from: "Jizzax", to: "Samarqand", cost: 5 },
-  { from: "Jizzax", to: "Shahrisabz", cost: 3 },
-  { from: "Samarqand", to: "Navoiy", cost: 6 },
-  { from: "Samarqand", to: "Qarshi", cost: 4 },
+  { from: "Jizzax", to: "Shahrisabz", cost: 2 },
+  { from: "Samarqand", to: "Navoiy", cost: 8 },
+  { from: "Samarqand", to: "Qarshi", cost: 6 },
   { from: "Shahrisabz", to: "Qarshi", cost: 2 },
-  { from: "Shahrisabz", to: "Termiz", cost: 8 },
-  { from: "Navoiy", to: "Buxoro", cost: 5 },
-  { from: "Navoiy", to: "Nukus", cost: 12 },
-  { from: "Qarshi", to: "Buxoro", cost: 7 },
-  { from: "Qarshi", to: "Termiz", cost: 3 },
-  { from: "Buxoro", to: "Nukus", cost: 8 },
-  { from: "Buxoro", to: "Urganch", cost: 4 },
-  { from: "Termiz", to: "Urganch", cost: 10 },
-  { from: "Termiz", to: "Xiva", cost: 15 },
-  { from: "Nukus", to: "Xiva", cost: 6 },
+  { from: "Shahrisabz", to: "Termiz", cost: 15 },
+  { from: "Navoiy", to: "Buxoro", cost: 7 },
+  { from: "Navoiy", to: "Nukus", cost: 18 },
+  { from: "Qarshi", to: "Buxoro", cost: 3 },
+  { from: "Qarshi", to: "Termiz", cost: 4 },
+  { from: "Buxoro", to: "Nukus", cost: 12 },
+  { from: "Buxoro", to: "Urganch", cost: 2 },
+  { from: "Termiz", to: "Urganch", cost: 12 },
+  { from: "Termiz", to: "Xiva", cost: 20 },
+  { from: "Nukus", to: "Xiva", cost: 15 },
   { from: "Urganch", to: "Xiva", cost: 2 },
 ];
 
-// Optimal route: Toshkent -> Guliston -> Jizzax -> Shahrisabz -> Qarshi -> Buxoro -> Urganch -> Xiva
-// Cost: 4 + 2 + 3 + 2 + 7 + 4 + 2 = 24
-export const OPTIMAL_ROUTE = ["Toshkent", "Guliston", "Jizzax", "Shahrisabz", "Qarshi", "Buxoro", "Urganch", "Xiva"];
-export const OPTIMAL_COST = 24;
+// Optimal route: Toshkent -> Jizzax -> Shahrisabz -> Qarshi -> Buxoro -> Urganch -> Xiva
+// Cost: 9 + 2 + 2 + 3 + 2 + 2 = 20
+export const OPTIMAL_ROUTE = ["Toshkent", "Jizzax", "Shahrisabz", "Qarshi", "Buxoro", "Urganch", "Xiva"];
+export const OPTIMAL_COST = 20;

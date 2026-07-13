@@ -17,10 +17,23 @@ interface RoundState {
   checked: boolean;
 }
 
-export default function CoinTask({ onComplete, savedState }: CoinTaskProps) {
+function getMinCoins(target: number, coins: number[]): number {
+  const dp = new Array(target + 1).fill(Infinity);
+  dp[0] = 0;
+  for (let i = 1; i <= target; i++) {
+    for (const coin of coins) {
+      if (i >= coin) {
+        dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+      }
+    }
+  }
+  return dp[target];
+}
+
+export default function CoinTask({ onComplete, savedState, onStateChange }: CoinTaskProps) {
   const ROUND_CONFIGS = [
     { target: 25, optimalCoins: [11, 11, 3] }, // Optimal: 3 coins (11+11+3=25)
-    { target: 31, optimalCoins: [11, 7, 7, 3] }, // Optimal: 4 coins (11+7+7+3=31). Greedy fails with 5: [11,11,3,3,3]
+    { target: 31, optimalCoins: [11, 11, 3, 3, 3] }, // Optimal: 5 coins (11+11+3+3+3=31)
     { target: 41, optimalCoins: [11, 11, 11, 4, 4] }, // Optimal: 5 coins
   ];
 
@@ -37,14 +50,28 @@ export default function CoinTask({ onComplete, savedState }: CoinTaskProps) {
   const [startTime] = useState<number>(Date.now());
 
   // Restore saved state if exists
+  const hasLoadedRef = React.useRef(false);
   useEffect(() => {
-    if (savedState) {
+    if (savedState && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       if (savedState.currentRoundIndex !== undefined) setCurrentRoundIndex(savedState.currentRoundIndex);
       if (savedState.rounds) setRounds(savedState.rounds);
       if (savedState.attemptsCount !== undefined) setAttemptsCount(savedState.attemptsCount);
       if (savedState.isTaskCompleted !== undefined) setIsTaskCompleted(savedState.isTaskCompleted);
     }
   }, [savedState]);
+
+  // Synchronize state changes back to parent
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        currentRoundIndex,
+        rounds,
+        attemptsCount,
+        isTaskCompleted,
+      });
+    }
+  }, [currentRoundIndex, rounds, attemptsCount, isTaskCompleted]);
 
   const currentRound = rounds[currentRoundIndex];
   const config = ROUND_CONFIGS[currentRoundIndex];
@@ -86,18 +113,19 @@ export default function CoinTask({ onComplete, savedState }: CoinTaskProps) {
     setAttemptsCount(prev => prev + 1);
     const updatedRounds = [...rounds];
     const isCorrect = currentSum === config.target;
-    const isOptimal = isCorrect && currentRound.userCoins.length === config.optimalCoins.length;
+    const minCoinsRequired = getMinCoins(config.target, [3, 4, 7, 11]);
+    const isOptimal = isCorrect && currentRound.userCoins.length === minCoinsRequired;
 
     if (isOptimal) {
       updatedRounds[currentRoundIndex].correct = isCorrect;
       updatedRounds[currentRoundIndex].isOptimal = isOptimal;
       updatedRounds[currentRoundIndex].checked = true;
       setRounds(updatedRounds);
-      setRoundFeedback(`Ajoyib! Siz bozordagi ushbu hisob-kitobni eng kam tangalar soni bilan hal qildingiz: ${config.optimalCoins.length} ta tanga. +33.3 ball! 🌟`);
+      setRoundFeedback(`Ajoyib! Siz bozordagi ushbu hisob-kitobni eng kam tangalar soni bilan hal qildingiz: ${minCoinsRequired} ta tanga. +33.3 ball! 🌟`);
     } else {
       updatedRounds[currentRoundIndex].checked = false; // block proceeding
       setRounds(updatedRounds);
-      setRoundFeedback(`Siz summani to'g'ri yig'dingiz, lekin bu optimal (eng kam tangali) yechim emas! (Sizda: ${currentRound.userCoins.length} ta tanga, lekin bundan ham kamroq tanga bilan yig'ish mumkin). Tozalab qaytadan urinib ko'ring.`);
+      setRoundFeedback(`Siz summani to'g'ri yig'dingiz, lekin bu optimal (eng kam tangali) yechim emas! (Sizda: ${currentRound.userCoins.length} ta tanga, lekin bundan ham kamroq tanga (ya'ni ${minCoinsRequired} ta) bilan yig'ish mumkin). Tozalab qaytadan urinib ko'ring.`);
     }
   };
 

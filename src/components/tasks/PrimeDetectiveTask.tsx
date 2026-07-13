@@ -21,7 +21,7 @@ interface RoundConfig {
   title: string;
 }
 
-export default function PrimeDetectiveTask({ onComplete, savedState }: PrimeDetectiveTaskProps) {
+export default function PrimeDetectiveTask({ onComplete, savedState, onStateChange }: PrimeDetectiveTaskProps) {
   // Harder target configurations
   const ROUND_CONFIGS: RoundConfig[] = [
     { number: 437, isPrime: false, factors: [19, 23], title: "1-raund: Sirli son" }, // 437 = 19 * 23
@@ -42,8 +42,10 @@ export default function PrimeDetectiveTask({ onComplete, savedState }: PrimeDete
   const [startTime] = useState<number>(Date.now());
 
   // Restore state
+  const hasLoadedRef = React.useRef(false);
   useEffect(() => {
-    if (savedState) {
+    if (savedState && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       if (savedState.currentRoundIndex !== undefined) setCurrentRoundIndex(savedState.currentRoundIndex);
       if (savedState.queriesHistory) setQueriesHistory(savedState.queriesHistory);
       if (savedState.roundDecisions) setRoundDecisions(savedState.roundDecisions);
@@ -55,6 +57,23 @@ export default function PrimeDetectiveTask({ onComplete, savedState }: PrimeDete
       if (savedState.feedback) setFeedback(savedState.feedback);
     }
   }, [savedState]);
+
+  // Synchronize state changes back to parent
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        currentRoundIndex,
+        queriesHistory,
+        roundDecisions,
+        userBonusFactors,
+        roundChecked,
+        roundCorrect,
+        attemptsCount,
+        isTaskCompleted,
+        feedback,
+      });
+    }
+  }, [currentRoundIndex, queriesHistory, roundDecisions, userBonusFactors, roundChecked, roundCorrect, attemptsCount, isTaskCompleted, feedback]);
 
   const config = ROUND_CONFIGS[currentRoundIndex];
   const currentHistory = queriesHistory[currentRoundIndex];

@@ -9,7 +9,7 @@ interface SlidingPuzzleTaskProps {
   onStateChange?: (state: any) => void;
 }
 
-export default function SlidingPuzzleTask({ onComplete, savedState }: SlidingPuzzleTaskProps) {
+export default function SlidingPuzzleTask({ onComplete, savedState, onStateChange }: SlidingPuzzleTaskProps) {
   const solvedBoard = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0];
 
   const [board, setBoard] = useState<number[]>([]);
@@ -28,8 +28,10 @@ export default function SlidingPuzzleTask({ onComplete, savedState }: SlidingPuz
   }, []);
 
   // Restore state
+  const hasLoadedRef = React.useRef(false);
   useEffect(() => {
-    if (savedState) {
+    if (savedState && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       if (savedState.board) setBoard(savedState.board);
       if (savedState.initialScrambledBoard) setInitialScrambledBoard(savedState.initialScrambledBoard);
       if (savedState.scrambleMovesCount !== undefined) setScrambleMovesCount(savedState.scrambleMovesCount);
@@ -39,6 +41,21 @@ export default function SlidingPuzzleTask({ onComplete, savedState }: SlidingPuz
       if (savedState.feedback) setFeedback(savedState.feedback);
     }
   }, [savedState]);
+
+  // Synchronize state changes back to parent
+  useEffect(() => {
+    if (onStateChange && board.length > 0) {
+      onStateChange({
+        board,
+        initialScrambledBoard,
+        scrambleMovesCount,
+        movesCount,
+        solved,
+        isCompleted,
+        feedback,
+      });
+    }
+  }, [board, initialScrambledBoard, scrambleMovesCount, movesCount, solved, isCompleted, feedback]);
 
   // Check if board is solved
   const checkIsSolved = (currBoard: number[]): boolean => {

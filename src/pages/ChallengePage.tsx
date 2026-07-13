@@ -3,6 +3,7 @@ import { TASK_LIST } from "../data/tasks";
 import { ChallengeSession, TaskResult } from "../types";
 import { updateChallengeSession, submitChallengeSession, saveTaskAttempt, fetchLeaderboard, getChallengeSession } from "../lib/session";
 import { Clock, User, LogOut, ClipboardList, AlertCircle, CheckCircle2, ArrowRight, Trophy, List } from "lucide-react";
+import { GRAPH_EDGES } from "../data/graphData";
 
 // Import task components
 import CoinTask from "../components/tasks/CoinTask";
@@ -11,6 +12,7 @@ import BinaryTreasureTask from "../components/tasks/BinaryTreasureTask";
 import ShortestPathTask from "../components/tasks/ShortestPathTask";
 import SlidingPuzzleTask from "../components/tasks/SlidingPuzzleTask";
 import PrimeDetectiveTask from "../components/tasks/PrimeDetectiveTask";
+import CaesarCipherTask from "../components/tasks/CaesarCipherTask";
 
 interface ChallengePageProps {
   session: ChallengeSession;
@@ -226,6 +228,279 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
   const isUrgentWarning = remainingSeconds <= 60; // 1 minute
   const isFiveMinWarning = remainingSeconds <= 300 && remainingSeconds > 60; // 5 minutes
 
+  const getPathCost = (path: string[]) => {
+    let cost = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const from = path[i];
+      const to = path[i + 1];
+      const edge = GRAPH_EDGES.find(
+        (e) => (e.from === from && e.to === to) || (e.from === to && e.to === from)
+      );
+      if (edge) {
+        cost += edge.cost;
+      } else {
+        cost += 999;
+      }
+    }
+    return cost;
+  };
+
+  const getTaskProgressText = (taskId: string, result: any) => {
+    if (!result) return { status: "Kutilmoqda", scoreText: "0 / 100 ball", roundText: "Boshlanmagan" };
+    
+    const score = result.score || 0;
+    const isCompleted = result.completed;
+    
+    if (isCompleted) {
+      return { status: "Yakunlandi", scoreText: `${score} / 100 ball`, roundText: "Barcha raundlar yechildi" };
+    }
+    
+    if (score > 0) {
+      let totalRounds = 3;
+      let passedRounds = 0;
+      let currentRound = 1;
+      
+      if (taskId === "coin_change") {
+        passedRounds = result.details?.rounds?.filter((r: any) => r.correct).length || 0;
+        currentRound = Math.min(3, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "greedy_backpack") {
+        passedRounds = result.details?.roundScores?.filter((s: number) => s > 0).length || 0;
+        currentRound = Math.min(3, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "binary_treasure") {
+        totalRounds = 2;
+        passedRounds = result.details?.roundFounds?.filter((f: any) => f).length || 0;
+        currentRound = Math.min(2, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "prime_detective") {
+        totalRounds = 2;
+        passedRounds = result.details?.roundCorrect?.filter((c: any) => c).length || 0;
+        currentRound = Math.min(2, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "shortest_path") {
+        totalRounds = 1;
+        passedRounds = 0;
+        currentRound = 1;
+      } else if (taskId === "sliding_puzzle") {
+        totalRounds = 1;
+        passedRounds = 0;
+        currentRound = 1;
+      } else if (taskId === "caesar_cipher") {
+        totalRounds = 1;
+        passedRounds = result.details?.solved ? 1 : 0;
+        currentRound = 1;
+      }
+      
+      if (totalRounds > 1) {
+        return {
+          status: "Jarayonda",
+          scoreText: `${score} / 100 ball`,
+          roundText: `${currentRound}-raundda, ${passedRounds}/${totalRounds} raund o'tildi`
+        };
+      } else {
+        return {
+          status: "Jarayonda",
+          scoreText: `${score} / 100 ball`,
+          roundText: "Qisman yechilgan"
+        };
+      }
+    }
+    
+    return { status: "Kutilmoqda", scoreText: "0 / 100 ball", roundText: "Boshlanmagan" };
+  };
+
+  const getTaskDetailsTooltip = (taskId: string, result: any, taskName: string) => {
+    if (!result) return `${taskName}: Urinilmagan (0 ball)`;
+    
+    const score = result.score ?? 0;
+    const isCompleted = result.completed;
+    
+    if (isCompleted) {
+      return `${taskName}: 100% yechilgan! (${score} ball)`;
+    }
+    
+    if (score > 0) {
+      let totalRounds = 3;
+      let passedRounds = 0;
+      let currentRound = 1;
+      
+      if (taskId === "coin_change") {
+        passedRounds = result.details?.rounds?.filter((r: any) => r.correct).length || 0;
+        currentRound = Math.min(3, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "greedy_backpack") {
+        passedRounds = result.details?.roundScores?.filter((s: number) => s > 0).length || 0;
+        currentRound = Math.min(3, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "binary_treasure") {
+        totalRounds = 2;
+        passedRounds = result.details?.roundFounds?.filter((f: any) => f).length || 0;
+        currentRound = Math.min(2, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "prime_detective") {
+        totalRounds = 2;
+        passedRounds = result.details?.roundCorrect?.filter((c: any) => c).length || 0;
+        currentRound = Math.min(2, (result.details?.currentRoundIndex || 0) + 1);
+      } else if (taskId === "shortest_path") {
+        totalRounds = 1;
+        passedRounds = 0;
+        currentRound = 1;
+      } else if (taskId === "sliding_puzzle") {
+        totalRounds = 1;
+        passedRounds = 0;
+        currentRound = 1;
+      } else if (taskId === "caesar_cipher") {
+        totalRounds = 1;
+        passedRounds = result.details?.solved ? 1 : 0;
+        currentRound = 1;
+      }
+      
+      if (totalRounds > 1) {
+        return `${taskName}: ${currentRound}-raund ustida ishlamoqda, ${passedRounds}/${totalRounds} raund o'tilgan (${score} ball)`;
+      } else {
+        return `${taskName}: qisman yechilgan (${score} ball)`;
+      }
+    }
+    
+    return `${taskName}: urinilgan lekin hali ball yig'ilmagan (0 ball)`;
+  };
+
+  const handleTaskStateChange = async (taskId: string, details: any) => {
+    if (currentSession.taskResults[taskId]?.completed) return;
+
+    // Calculate intermediate/partial score dynamically
+    let calculatedScore = 0;
+    
+    if (taskId === "coin_change") {
+      const rounds = details.rounds || [];
+      let ccScore = 0;
+      if (rounds[0]?.correct) ccScore += 33;
+      if (rounds[1]?.correct) ccScore += 33;
+      if (rounds[2]?.correct) ccScore += 34;
+      calculatedScore = ccScore;
+    } else if (taskId === "greedy_backpack") {
+      const roundScores = details.roundScores || [];
+      calculatedScore = (roundScores[0] || 0) + (roundScores[1] || 0) + (roundScores[2] || 0);
+    } else if (taskId === "binary_treasure") {
+      const roundScores = details.roundScores || [];
+      calculatedScore = (roundScores[0] || 0) + (roundScores[1] || 0);
+    } else if (taskId === "shortest_path") {
+      const cost = details.currentPath ? getPathCost(details.currentPath) : 999;
+      const isAtFinish = details.currentPath?.[details.currentPath.length - 1] === "Xiva";
+      if (isAtFinish) {
+        if (cost === 20) calculatedScore = 100;
+        else if (cost <= 22) calculatedScore = 80;
+        else if (cost <= 25) calculatedScore = 60;
+        else calculatedScore = 40;
+      } else {
+        calculatedScore = Math.min(25, (details.currentPath?.length || 1) * 3);
+      }
+    } else if (taskId === "sliding_puzzle") {
+      if (details.solved) {
+        const moves = details.movesCount || 0;
+        const scrambleMoves = details.scrambleMovesCount || 10;
+        if (moves <= scrambleMoves + 2) calculatedScore = 100;
+        else if (moves <= 20) calculatedScore = 80;
+        else if (moves <= 35) calculatedScore = 60;
+        else calculatedScore = 45;
+      } else {
+        const currBoard = details.board || [];
+        const solvedBoard = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0];
+        let correctPlacements = 0;
+        currBoard.forEach((val: number, idx: number) => {
+          if (val === solvedBoard[idx] && val !== 0) correctPlacements++;
+        });
+        calculatedScore = Math.round((correctPlacements / 15) * 35);
+      }
+    } else if (taskId === "prime_detective") {
+      const r1Correct = details.roundCorrect?.[0];
+      const r1Queries = details.queriesHistory?.[0]?.length || 0;
+      let r1Score = 0;
+      if (details.roundChecked?.[0]) {
+        if (r1Correct) {
+          r1Score = 30;
+          if (r1Queries >= 1 && r1Queries <= 5) r1Score += 10;
+          else if (r1Queries >= 6 && r1Queries <= 10) r1Score += 6;
+          else if (r1Queries >= 11 && r1Queries <= 15) r1Score += 2;
+          
+          const parsedFactor = parseInt(details.userBonusFactors?.[0]);
+          if (!isNaN(parsedFactor) && parsedFactor > 1 && parsedFactor < 437 && 437 % parsedFactor === 0) {
+            r1Score += 10;
+          }
+        } else {
+          r1Score = 10;
+        }
+      }
+
+      const r2Correct = details.roundCorrect?.[1];
+      const r2Queries = details.queriesHistory?.[1]?.length || 0;
+      let r2Score = 0;
+      if (details.roundChecked?.[1]) {
+        if (r2Correct) {
+          r2Score = 35;
+          if (r2Queries >= 1 && r2Queries <= 10) r2Score += 15;
+          else if (r2Queries >= 11 && r2Queries <= 18) r2Score += 8;
+          else if (r2Queries >= 19 && r2Queries <= 25) r2Score += 3;
+        } else {
+          r2Score = 15;
+        }
+      }
+      calculatedScore = r1Score + r2Score;
+    } else if (taskId === "caesar_cipher") {
+      calculatedScore = details.solved ? 100 : (details.progressPercentage || 0);
+    }
+
+    const existingResult = currentSession.taskResults[taskId] || {
+      taskId,
+      taskName: TASK_LIST.find(t => t.id === taskId)?.name || taskId,
+      score: 0,
+      maxScore: 100,
+      completed: false,
+      attemptsCount: 0,
+      hintsUsed: 0,
+      timeSpentSeconds: 0,
+    };
+
+    const finalScore = Math.max(existingResult.score, Math.min(100, calculatedScore));
+
+    const updatedResult = {
+      ...existingResult,
+      score: finalScore,
+      details: {
+        ...(existingResult.details || {}),
+        ...details,
+      },
+    };
+
+    const updatedResults = {
+      ...currentSession.taskResults,
+      [taskId]: updatedResult,
+    };
+
+    // Dynamically sum the scores and completed tasks across all results
+    let dynamicTotalScore = 0;
+    let dynamicCompletedCount = 0;
+    Object.values(updatedResults).forEach((res: any) => {
+      dynamicTotalScore += res.score || 0;
+      if (res.completed) {
+        dynamicCompletedCount++;
+      }
+    });
+
+    const updatedSession = {
+      ...currentSession,
+      taskResults: updatedResults,
+      totalScore: dynamicTotalScore,
+      completedTasksCount: dynamicCompletedCount,
+    };
+
+    setCurrentSession(updatedSession);
+
+    try {
+      await updateChallengeSession(currentSession.id, {
+        taskResults: updatedResults,
+        totalScore: dynamicTotalScore,
+        completedTasksCount: dynamicCompletedCount,
+      });
+    } catch (err) {
+      console.error("Failed to update intermediate state in Firestore:", err);
+    }
+  };
+
   const renderActiveTask = () => {
     const savedState = currentSession.taskResults[activeTaskId]?.details;
 
@@ -233,6 +508,7 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
       sessionId: currentSession.id,
       onComplete: handleTaskComplete,
       savedState,
+      onStateChange: (state: any) => handleTaskStateChange(activeTaskId, state),
     };
 
     switch (activeTaskId) {
@@ -248,6 +524,15 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
         return <SlidingPuzzleTask {...props} />;
       case "prime_detective":
         return <PrimeDetectiveTask {...props} />;
+      case "caesar_cipher":
+        return (
+          <CaesarCipherTask
+            {...props}
+            firstName={currentSession.firstName}
+            lastName={currentSession.lastName}
+            fullName={currentSession.fullName}
+          />
+        );
       default:
         return (
           <div className="flex items-center justify-center h-64 text-slate-500 font-mono">
@@ -377,12 +662,15 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
                 const result = currentSession.taskResults[task.id];
                 const isCompleted = result?.completed;
                 const isActive = activeTaskId === task.id;
+                const progress = getTaskProgressText(task.id, result);
 
                 let cardClass = "bg-slate-900/30 border-slate-850 hover:bg-slate-900/60 hover:border-slate-800";
                 if (isActive) {
                   cardClass = "bg-amber-500/5 border-amber-500/70 shadow-md shadow-amber-950/20";
                 } else if (isCompleted) {
                   cardClass = "bg-emerald-950/10 border-emerald-500/20 hover:bg-emerald-950/20";
+                } else if (result?.score > 0) {
+                  cardClass = "bg-amber-950/5 border-amber-500/20 hover:bg-amber-950/10";
                 }
 
                 return (
@@ -413,13 +701,22 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center w-full mt-3.5 pt-2 border-t border-slate-850 text-[9px] font-mono">
-                      <span className="text-slate-500 font-bold uppercase tracking-wider">
-                        {isCompleted ? "Yakunlandi" : "Kutilmoqda"}
-                      </span>
-                      <span className="text-amber-400 font-bold">
-                        {isCompleted ? `${result.score} / ${task.maxScore}` : `0 / ${task.maxScore}`} ball
-                      </span>
+                    <div className="flex flex-col gap-1 w-full mt-3 pt-2 border-t border-slate-850 text-[9px] font-mono">
+                      <div className="flex justify-between items-center w-full">
+                        <span className={`font-bold uppercase tracking-wider ${
+                          isCompleted ? "text-emerald-400" : (result?.score > 0 ? "text-amber-400 animate-pulse" : "text-slate-500")
+                        }`}>
+                          {progress.status}
+                        </span>
+                        <span className="text-amber-400 font-bold">
+                          {result ? `${result.score} / ${task.maxScore}` : `0 / ${task.maxScore}`} ball
+                        </span>
+                      </div>
+                      {result?.score > 0 && (
+                        <div className="text-[10px] text-slate-400/95 mt-0.5 font-medium leading-none">
+                          {progress.roundText}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
@@ -429,7 +726,7 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
             /* Live ACM-ICPC / IOI Style scoreboard list */
             <div className="flex flex-col gap-2.5 max-h-[480px] overflow-y-auto pr-1">
               <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest font-mono">
-                CP-Style Scoreboard (Yashil: Yechildi, Kulrang: Yechilmagan)
+                CP-Style Scoreboard (Yashil: Yechildi, Sariq: Jarayonda)
               </span>
               
               {liveLeaderboard.length === 0 ? (
@@ -490,15 +787,26 @@ export default function ChallengePage({ session, onFinish }: ChallengePageProps)
                             {tasksAbbr.map((abbr) => {
                               const solvedScore = entry.taskBreakdown?.[abbr.id] || 0;
                               const isSolved = solvedScore > 0;
+                              const taskResult = entry.taskResults?.[abbr.id];
+                              const isFullySolved = solvedScore >= 95 || taskResult?.completed;
+                              
+                              const taskName = TASK_LIST.find(t => t.id === abbr.id)?.name || abbr.id;
+                              const tooltip = getTaskDetailsTooltip(abbr.id, taskResult || (solvedScore > 0 ? { score: solvedScore } : null), taskName);
+                              
+                              let blockBg = "bg-slate-850 text-slate-600 border border-slate-800/30";
+                              if (isSolved) {
+                                if (isFullySolved) {
+                                  blockBg = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                                } else {
+                                  blockBg = "bg-amber-500/15 text-amber-400 border border-amber-500/40 animate-pulse";
+                                }
+                              }
+                              
                               return (
                                 <div
                                   key={abbr.id}
-                                  title={`${abbr.id}: ${solvedScore} ball`}
-                                  className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-black font-mono transition-colors ${
-                                    isSolved
-                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                                      : "bg-slate-850 text-slate-600 border border-slate-800/30"
-                                  }`}
+                                  title={tooltip}
+                                  className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-black font-mono transition-colors cursor-help ${blockBg}`}
                                 >
                                   {abbr.letter}
                                 </div>

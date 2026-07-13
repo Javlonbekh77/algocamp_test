@@ -32,7 +32,7 @@ export default function ResultPage({ session, onNavigate }: ResultPageProps) {
         {/* Dynamic Score and Title */}
         <div className="my-6">
           <h3 id="result-total-score" className="text-5xl font-black text-amber-400 font-mono">
-            {session.totalScore} <span className="text-xl text-slate-500 font-normal">/ 600</span>
+            {session.totalScore} <span className="text-xl text-slate-500 font-normal">/ {session.maxScore || (TASK_LIST.length * 100)}</span>
           </h3>
           <p id="result-feedback-title" className="text-lg font-bold text-cyan-300 mt-2">{feedback.title}</p>
           <p id="result-feedback-desc" className="text-slate-400 text-xs mt-1.5 max-w-lg mx-auto leading-relaxed">{feedback.desc}</p>
@@ -46,7 +46,7 @@ export default function ResultPage({ session, onNavigate }: ResultPageProps) {
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <BookOpen className="w-4 h-4 text-emerald-400" />
-            <span>Yechildi: <strong>{session.completedTasksCount} / 6</strong> ta masala</span>
+            <span>Yechildi: <strong>{session.completedTasksCount} / {TASK_LIST.length}</strong> ta masala</span>
           </div>
         </div>
       </div>

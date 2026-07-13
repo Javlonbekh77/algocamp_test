@@ -18,7 +18,7 @@ interface BackpackItem {
   ratio: number;
 }
 
-export default function GreedyBackpackTask({ onComplete, savedState }: GreedyBackpackTaskProps) {
+export default function GreedyBackpackTask({ onComplete, savedState, onStateChange }: GreedyBackpackTaskProps) {
   // Configs - Grocery/Market theme with Uzbek daily bazaar items
   const ITEMS_ROUND_1: BackpackItem[] = [
     { id: "asal", name: "🍯 Tog' Asali", weight: 3, value: 15, ratio: 5.0 },
@@ -88,8 +88,10 @@ export default function GreedyBackpackTask({ onComplete, savedState }: GreedyBac
   const [startTime] = useState<number>(Date.now());
 
   // Restore state
+  const hasLoadedRef = React.useRef(false);
   useEffect(() => {
-    if (savedState) {
+    if (savedState && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       if (savedState.currentRoundIndex !== undefined) setCurrentRoundIndex(savedState.currentRoundIndex);
       if (savedState.selectedIds) setSelectedIds(savedState.selectedIds);
       if (savedState.roundScores) setRoundScores(savedState.roundScores);
@@ -98,6 +100,20 @@ export default function GreedyBackpackTask({ onComplete, savedState }: GreedyBac
       if (savedState.isTaskCompleted !== undefined) setIsTaskCompleted(savedState.isTaskCompleted);
     }
   }, [savedState]);
+
+  // Synchronize state changes back to parent
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        currentRoundIndex,
+        selectedIds,
+        roundScores,
+        roundChecked,
+        attemptsCount,
+        isTaskCompleted,
+      });
+    }
+  }, [currentRoundIndex, selectedIds, roundScores, roundChecked, attemptsCount, isTaskCompleted]);
 
   const config = ROUNDS_CONFIG[currentRoundIndex];
   const currentWeight = config.items
@@ -231,7 +247,51 @@ export default function GreedyBackpackTask({ onComplete, savedState }: GreedyBac
 
       {/* Main Container */}
       <div className="flex flex-col gap-6 w-full flex-1 my-2">
-        {/* Row 1: Backpack Status Monitor */}
+        {/* Row 1: Items Selection Area */}
+        <div className="w-full bg-slate-950/80 rounded-2xl p-5 border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.03)] flex flex-col gap-4">
+          <h3 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">Mahsulotlarni tanlang (Ustiga bosing):</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[440px] overflow-y-auto pr-1">
+            {config.items.map((item) => {
+              const isSelected = selectedIds.includes(item.id);
+
+              return (
+                <button
+                  key={item.id}
+                  id={`item-card-${item.id}`}
+                  onClick={() => handleSelectItem(item.id)}
+                  disabled={roundChecked[currentRoundIndex]}
+                  className={`p-4 rounded-xl border flex flex-col justify-between gap-3 transition-all select-none text-left min-h-[145px] relative ${
+                    isSelected
+                      ? "bg-amber-500/10 border-amber-500 shadow-lg shadow-amber-950/25 ring-1 ring-amber-500/30"
+                      : "bg-slate-900/40 border-slate-850 hover:bg-slate-850 hover:border-slate-750"
+                  } ${roundChecked[currentRoundIndex] ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className={`p-2.5 rounded-lg shrink-0 ${isSelected ? "bg-amber-500/20 text-amber-400" : "bg-slate-800 text-slate-400"}`}>
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
+                    <span className="font-bold text-xs sm:text-sm text-slate-100 truncate pr-2" title={item.name}>{item.name}</span>
+                  </div>
+
+                  <div className="w-full flex justify-between items-end mt-2 pt-2 border-t border-slate-900/60">
+                    <div className="flex flex-col gap-1 text-[11px]">
+                      <span className="text-slate-400">Vazn: <strong className="text-slate-200 font-mono font-bold">{item.weight} kg</strong></span>
+                      <span className="text-slate-400">Qiymat: <strong className="text-amber-400 font-mono font-bold">{item.value} ball</strong></span>
+                    </div>
+                    {item.ratio && (
+                      <div className="text-right bg-slate-950/50 px-2.5 py-1.5 rounded border border-slate-800/80 shrink-0">
+                        <span className="text-[8px] text-slate-500 block font-mono leading-none mb-0.5">Zichlik</span>
+                        <span className="text-xs font-mono font-bold text-slate-300">{item.ratio.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Row 2: Backpack Status Monitor */}
         <div className="w-full bg-slate-900/60 p-5 rounded-2xl border border-slate-850 flex flex-col lg:flex-row gap-5 items-center justify-between font-mono">
           {/* Left: Capacity Progress */}
           <div className="flex-1 w-full text-left">
@@ -309,50 +369,6 @@ export default function GreedyBackpackTask({ onComplete, savedState }: GreedyBac
                 {currentRoundIndex < 2 ? "KEYINGI RAUND" : "MISSIYANI YAKUNLASH"} <ChevronRight className="w-4 h-4" />
               </button>
             )}
-          </div>
-        </div>
-
-        {/* Row 2: Items Selection Area */}
-        <div className="w-full bg-slate-950/80 rounded-2xl p-5 border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.03)] flex flex-col gap-4">
-          <h3 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">Mahsulotlarni tanlang (Ustiga bosing):</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[440px] overflow-y-auto pr-1">
-            {config.items.map((item) => {
-              const isSelected = selectedIds.includes(item.id);
-
-              return (
-                <button
-                  key={item.id}
-                  id={`item-card-${item.id}`}
-                  onClick={() => handleSelectItem(item.id)}
-                  disabled={roundChecked[currentRoundIndex]}
-                  className={`p-4 rounded-xl border flex flex-col justify-between gap-3 transition-all select-none text-left min-h-[145px] relative ${
-                    isSelected
-                      ? "bg-amber-500/10 border-amber-500 shadow-lg shadow-amber-950/25 ring-1 ring-amber-500/30"
-                      : "bg-slate-900/40 border-slate-850 hover:bg-slate-850 hover:border-slate-750"
-                  } ${roundChecked[currentRoundIndex] ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className={`p-2.5 rounded-lg shrink-0 ${isSelected ? "bg-amber-500/20 text-amber-400" : "bg-slate-800 text-slate-400"}`}>
-                      <ShoppingBag className="w-4 h-4" />
-                    </div>
-                    <span className="font-bold text-xs sm:text-sm text-slate-100 truncate pr-2" title={item.name}>{item.name}</span>
-                  </div>
-
-                  <div className="w-full flex justify-between items-end mt-2 pt-2 border-t border-slate-900/60">
-                    <div className="flex flex-col gap-1 text-[11px]">
-                      <span className="text-slate-400">Vazn: <strong className="text-slate-200 font-mono font-bold">{item.weight} kg</strong></span>
-                      <span className="text-slate-400">Qiymat: <strong className="text-amber-400 font-mono font-bold">{item.value} ball</strong></span>
-                    </div>
-                    {item.ratio && (
-                      <div className="text-right bg-slate-950/50 px-2.5 py-1.5 rounded border border-slate-800/80 shrink-0">
-                        <span className="text-[8px] text-slate-500 block font-mono leading-none mb-0.5">Zichlik</span>
-                        <span className="text-xs font-mono font-bold text-slate-300">{item.ratio.toFixed(2)}</span>
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
           </div>
         </div>
       </div>

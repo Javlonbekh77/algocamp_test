@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { ChallengeSession, TaskResult, LeaderboardEntry } from "../types";
+import { TASK_LIST } from "../data/tasks";
 
 const SESSIONS_COLLECTION = "challengeSessions";
 const ATTEMPTS_COLLECTION = "taskAttempts";
@@ -64,7 +65,7 @@ export async function createChallengeSession(
     anonymousUid,
     status: "active",
     totalScore: 0,
-    maxScore: 600,
+    maxScore: TASK_LIST.length * 100,
     elapsedSeconds: 0,
     remainingSeconds: 1800, // 30 minutes
     completedTasksCount: 0,
@@ -289,6 +290,7 @@ export async function fetchLeaderboard(filter: "all" | "today"): Promise<Leaderb
       elapsedSeconds: data.elapsedSeconds || 0,
       createdAt,
       taskBreakdown,
+      taskResults: data.taskResults || {},
       // Store status dynamically so the leaderboard page can show if they are live!
       status: data.status || "active",
     } as any);

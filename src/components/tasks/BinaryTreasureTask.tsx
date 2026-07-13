@@ -9,7 +9,7 @@ interface BinaryTreasureTaskProps {
   onStateChange?: (state: any) => void;
 }
 
-export default function BinaryTreasureTask({ onComplete, savedState }: BinaryTreasureTaskProps) {
+export default function BinaryTreasureTask({ onComplete, savedState, onStateChange }: BinaryTreasureTaskProps) {
   const [currentRoundIndex, setCurrentRoundIndex] = useState<number>(0); // 0 = Round 1 (1-100, max 7), 1 = Round 2 (1-1000, max 10)
   const [targetNumber, setTargetNumber] = useState<number>(0);
   const [guesses, setGuesses] = useState<number[]>([]);
@@ -53,8 +53,10 @@ export default function BinaryTreasureTask({ onComplete, savedState }: BinaryTre
   }, []);
 
   // Restore state if provided
+  const hasLoadedRef = React.useRef(false);
   useEffect(() => {
-    if (savedState) {
+    if (savedState && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       if (savedState.currentRoundIndex !== undefined) setCurrentRoundIndex(savedState.currentRoundIndex);
       if (savedState.targetNumber !== undefined) setTargetNumber(savedState.targetNumber);
       if (savedState.guesses) setGuesses(savedState.guesses);
@@ -70,6 +72,27 @@ export default function BinaryTreasureTask({ onComplete, savedState }: BinaryTre
       if (savedState.roundFounds) setRoundFounds(savedState.roundFounds);
     }
   }, [savedState]);
+
+  // Synchronize state changes back to parent
+  useEffect(() => {
+    if (onStateChange && targetNumber !== 0) {
+      onStateChange({
+        currentRoundIndex,
+        targetNumber,
+        guesses,
+        minRange,
+        maxRange,
+        found,
+        gameOver,
+        feedback,
+        roundScores,
+        roundChecked,
+        roundGuesses,
+        roundTargets,
+        roundFounds,
+      });
+    }
+  }, [currentRoundIndex, targetNumber, guesses, minRange, maxRange, found, gameOver, feedback, roundScores, roundChecked, roundGuesses, roundTargets, roundFounds]);
 
   const resetRound = (roundIdx: number) => {
     const maxVal = roundIdx === 0 ? 100 : 1000;

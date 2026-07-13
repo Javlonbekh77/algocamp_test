@@ -11,7 +11,7 @@ interface ShortestPathTaskProps {
   onStateChange?: (state: any) => void;
 }
 
-export default function ShortestPathTask({ onComplete, savedState }: ShortestPathTaskProps) {
+export default function ShortestPathTask({ onComplete, savedState, onStateChange }: ShortestPathTaskProps) {
   const [currentPath, setCurrentPath] = useState<string[]>(["Toshkent"]);
   const [attemptsCount, setAttemptsCount] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("Toshkent shahridan boshlab Xiva shahrigacha eng qisqa va arzon yo'lni toping.");
@@ -19,14 +19,28 @@ export default function ShortestPathTask({ onComplete, savedState }: ShortestPat
   const [startTime] = useState<number>(Date.now());
 
   // Restore state
+  const hasLoadedRef = React.useRef(false);
   useEffect(() => {
-    if (savedState) {
+    if (savedState && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       if (savedState.currentPath) setCurrentPath(savedState.currentPath);
       if (savedState.attemptsCount !== undefined) setAttemptsCount(savedState.attemptsCount);
       if (savedState.isCompleted !== undefined) setIsCompleted(savedState.isCompleted);
       if (savedState.feedback) setFeedback(savedState.feedback);
     }
   }, [savedState]);
+
+  // Synchronize state changes back to parent
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        currentPath,
+        attemptsCount,
+        isCompleted,
+        feedback,
+      });
+    }
+  }, [currentPath, attemptsCount, isCompleted, feedback]);
 
   const lastNode = currentPath[currentPath.length - 1];
   const isAtFinish = lastNode === "Xiva";
@@ -202,16 +216,11 @@ export default function ShortestPathTask({ onComplete, savedState }: ShortestPat
             </div>
           </div>
 
-          {/* Middle Side: Live Cost and Feedback */}
-          <div className="w-full lg:w-auto shrink-0 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-            <div className="bg-slate-950/80 px-4 py-2.5 rounded-lg border border-slate-800 flex items-center justify-between gap-3 shrink-0">
-              <span className="text-xs text-slate-400">Yo'l xarajati:</span>
-              <span id="shortest-path-cost" className="text-base font-mono font-black text-amber-400">{pathCost === 999 ? "N/A" : `${pathCost} soat`}</span>
-            </div>
-
+          {/* Right Side: Live Feedback */}
+          <div className="w-full lg:w-auto shrink-0">
             <div
               id="path-feedback"
-              className={`px-4 py-2.5 rounded-lg border text-[11px] leading-snug flex-1 lg:max-w-xs ${
+              className={`px-4 py-2.5 rounded-lg border text-[11px] leading-snug lg:max-w-md ${
                 isCompleted
                   ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-400"
                   : "bg-slate-950/60 border-slate-850 text-slate-350"
@@ -219,34 +228,6 @@ export default function ShortestPathTask({ onComplete, savedState }: ShortestPat
             >
               {feedback}
             </div>
-          </div>
-
-          {/* Right Side: Action Buttons */}
-          <div className="w-full lg:w-auto flex gap-2 shrink-0">
-            <button
-              id="path-undo-btn"
-              onClick={handleUndo}
-              disabled={currentPath.length <= 1 || isCompleted}
-              className="px-3.5 py-2.5 bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-250 hover:bg-slate-900 text-xs font-bold rounded-lg disabled:opacity-30 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              Orqaga
-            </button>
-            <button
-              id="path-reset-btn"
-              onClick={handleReset}
-              disabled={currentPath.length <= 1 || isCompleted}
-              className="px-3.5 py-2.5 bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-250 hover:bg-slate-900 text-xs font-bold rounded-lg disabled:opacity-30 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Tozalash
-            </button>
-            <button
-              id="path-submit-btn"
-              onClick={handleSubmitPath}
-              disabled={!isAtFinish || isCompleted}
-              className="px-5 py-2.5 rounded-lg font-bold transition-all shadow-md text-xs disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-450 hover:to-amber-550 text-slate-950 disabled:from-slate-800 disabled:to-slate-900 disabled:text-slate-600 font-mono cursor-pointer"
-            >
-              YO'LNI TEKSHIRISH
-            </button>
           </div>
         </div>
 
@@ -345,6 +326,41 @@ export default function ShortestPathTask({ onComplete, savedState }: ShortestPat
               );
             })}
           </div>
+        </div>
+      </div>
+
+      {/* Row 3: Action controls placed directly below the map canvas container */}
+      <div className="w-full bg-slate-900/60 p-4 rounded-2xl border border-slate-850 flex flex-col sm:flex-row gap-4 items-center justify-between font-mono">
+        <div className="bg-slate-950/80 px-4 py-2.5 rounded-lg border border-slate-800 flex items-center justify-between gap-3 shrink-0 w-full sm:w-auto">
+          <span className="text-xs text-slate-400">Yo'l xarajati:</span>
+          <span id="shortest-path-cost" className="text-base font-mono font-black text-amber-400">{pathCost === 999 ? "N/A" : `${pathCost} soat`}</span>
+        </div>
+
+        <div className="w-full sm:w-auto flex gap-2 justify-end shrink-0">
+          <button
+            id="path-undo-btn"
+            onClick={handleUndo}
+            disabled={currentPath.length <= 1 || isCompleted}
+            className="px-4 py-2.5 bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900 text-xs font-bold rounded-lg disabled:opacity-30 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            Orqaga
+          </button>
+          <button
+            id="path-reset-btn"
+            onClick={handleReset}
+            disabled={currentPath.length <= 1 || isCompleted}
+            className="px-4 py-2.5 bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900 text-xs font-bold rounded-lg disabled:opacity-30 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Tozalash
+          </button>
+          <button
+            id="path-submit-btn"
+            onClick={handleSubmitPath}
+            disabled={!isAtFinish || isCompleted}
+            className="px-5 py-2.5 rounded-lg font-bold transition-all shadow-md text-xs disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-450 hover:to-amber-550 text-slate-950 disabled:from-slate-800 disabled:to-slate-900 disabled:text-slate-600 font-mono cursor-pointer"
+          >
+            YO'LNI TEKSHIRISH
+          </button>
         </div>
       </div>
 

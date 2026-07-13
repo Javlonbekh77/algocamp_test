@@ -114,13 +114,13 @@ export function getFeedbackAndScore(taskId: string, input: TaskScoringInput): { 
       if (!isValid) {
         score = Math.max(0, 10 - hintPenalty - attemptsPenalty);
         feedback = "Yo'nalish xaritada uzilgan yoki noto'g'ri bog'langan. Shaharlararo yo'llar bo'ylab harakatlaning.";
-      } else if (cost === 24) {
+      } else if (cost === 20) {
         score = 100 - hintPenalty - attemptsPenalty;
-        feedback = "Ajoyib! Siz eng arzon yo'lni topdingiz (qiymati: 24). Bu eng optimal yechim!";
-      } else if (cost <= 26) {
+        feedback = "Ajoyib! Siz eng arzon yo'lni topdingiz (qiymati: 20). Bu eng optimal yechim!";
+      } else if (cost <= 22) {
         score = 80 - hintPenalty - attemptsPenalty;
         feedback = `Juda yaxshi! Topilgan yo'l narxi: ${cost}. Siz eng qisqa yo'nalishlardan birini aniqladingiz.`;
-      } else if (cost <= 29) {
+      } else if (cost <= 25) {
         score = 60 - hintPenalty - attemptsPenalty;
         feedback = `Yaxshi, yo'l topildi (narxi: ${cost}). Lekin bundan ham arzonroq yo'l mavjud.`;
       } else {
@@ -199,6 +199,22 @@ export function getFeedbackAndScore(taskId: string, input: TaskScoringInput): { 
       break;
     }
 
+    case "caesar_cipher": {
+      const solved = details.solved || false;
+      if (solved) {
+        score = 100 - hintPenalty - attemptsPenalty;
+      } else {
+        score = 0;
+      }
+      score = Math.max(0, Math.min(100, score));
+      if (solved) {
+        feedback = "Ajoyib! Sezar shifri kalitini muvaffaqiyatli aniqladingiz va ukangizning sirli maktubini to'liq deshifrladingiz!";
+      } else {
+        feedback = "Maktub hali deshifrlanmadi.";
+      }
+      break;
+    }
+
     default:
       score = 0;
       feedback = "Noma'lum masala.";
@@ -209,9 +225,8 @@ export function getFeedbackAndScore(taskId: string, input: TaskScoringInput): { 
     feedback += ` (Xato urinishlar jarimasi: -${attemptsPenalty} ball).`;
   }
 
-  // Vaqtni reytingda inobatga olish: Har 45 soniya uchun 1 ball chegiriladi (maksimal 15 ball chegirma)
-  // Bu tezkor va optimal yechgan foydalanuvchilarni rag'batlantiradi!
-  const timePenalty = Math.min(15, Math.floor((input.timeSpentSeconds || 0) / 45));
+  // Vaqtni reytingda inobatga olish (faoliyatsizlantirildi, o'quvchilar bemalol o'ylab 100 ball olishi uchun!)
+  const timePenalty = 0;
   if (score > 20) {
     score = Math.max(20, score - timePenalty); // to'g'ri yechim bo'lsa, ball haddan tashqari tushib ketmaydi
   } else {

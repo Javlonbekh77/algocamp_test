@@ -42,5 +42,12 @@ export const TASK_LIST: TaskDefinition[] = [
     concept: "Bo'linuvchanlik / Tub sonlarni samarali tekshirish",
     difficulty: "Qiyin",
     maxScore: 100,
+  },
+  {
+    id: "caesar_cipher",
+    name: "Sirli Maktub",
+    concept: "Kriptografiya / Sezar shifrlash va tahlil",
+    difficulty: "O'rta",
+    maxScore: 100,
   }
 ];
